@@ -1,20 +1,20 @@
 resource "azurerm_resource_group" "jenkins" {
     name     = "rg-jenkins"
-    location = "West Europe"
+    location = var.location
 
     tags = {
-        environment = "Jenkins Test"
+        environment = var.environment
     }
 }
 
 resource "azurerm_virtual_network" "jenkins" {
     name                = "vnet-common"
-    address_space       = ["10.0.0.0/16"]
+    address_space       = var.common_vnet_address_space
     location            = azurerm_resource_group.jenkins.location
     resource_group_name = azurerm_resource_group.jenkins.name
 
     tags = {
-        environment = "Jenkins Test"
+        environment = var.environment
     }
 }
 
@@ -32,7 +32,7 @@ resource "azurerm_public_ip" "jenkins" {
     allocation_method            = "Dynamic"
 
     tags = {
-        environment = "Jenkins Test"
+        environment = var.environment
     }
 }
 
@@ -54,19 +54,19 @@ resource "azurerm_network_security_group" "jenkins" {
     }
 
     security_rule {
-        name                       = "Port-8080"
+        name                       = "Jenkins-port"
         priority                   = 1002
         direction                  = "Inbound"
         access                     = "Allow"
         protocol                   = "Tcp"
         source_port_range          = "*"
-        destination_port_range     = "8080"
+        destination_port_range     = var.jenkins_port
         source_address_prefix      = "*"
         destination_address_prefix = "*"
     }
 
     tags = {
-        environment = "Jenkins Test"
+        environment = var.environment
     }
 }
 
@@ -83,7 +83,7 @@ resource "azurerm_network_interface" "jenkins" {
     }
 
     tags = {
-        environment = "Jenkins Test"
+        environment = var.environment
     }
 }
 
@@ -110,23 +110,23 @@ resource "azurerm_storage_account" "diag" {
     account_tier                = "Standard"
 
     tags = {
-        environment = "Jenkins Test"
+        environment = var.environment
     }
 }
 
 resource "azurerm_linux_virtual_machine" "jenkins" {
     name                = "vm-jenkins"
     resource_group_name = azurerm_resource_group.jenkins.name
-    location            = azurerm_resource_group.jenkins.location
-    size                = "Standard_DS1_v2"
-    admin_username      = "jenkinsadmin"
+    location            = var.location
+    size                = var.jenkins_vm_size
+    admin_username      = var.jenkins_user
     network_interface_ids = [
         azurerm_network_interface.jenkins.id,
     ]
 
     admin_ssh_key {
-        username   = "jenkinsadmin"
-        public_key = file("~/.ssh/id_rsa.pub")
+        username   = var.jenkins_user
+        public_key = file(var.public_key)
     }
 
     os_disk {
@@ -141,7 +141,7 @@ resource "azurerm_linux_virtual_machine" "jenkins" {
         version   = "latest"
     }
 
-    #install Jenkins
+    #install Jenkins using cloud-init
     custom_data = filebase64("./cloud-init-jenkins.txt")
 
     boot_diagnostics {
@@ -149,6 +149,6 @@ resource "azurerm_linux_virtual_machine" "jenkins" {
     }
 
     tags = {
-        environment = "Jenkins Test"
+        environment = var.environment
     }
 }

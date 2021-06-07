@@ -8,7 +8,7 @@ terraform {
     }
 }
 
-#Define features for the azure provider
+#Configure azure provider
 provider "azurerm" {
     features {}
 }
