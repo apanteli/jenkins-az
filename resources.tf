@@ -22,7 +22,7 @@ resource "azurerm_subnet" "jenkins" {
     name                 = "snet-jenkins"
     resource_group_name  = azurerm_resource_group.jenkins.name
     virtual_network_name = azurerm_virtual_network.jenkins.name
-    address_prefixes     = ["10.0.2.0/24"]
+    address_prefixes     = var.jenkins_subnet_address_prefix
 }
 
 resource "azurerm_public_ip" "jenkins" {
